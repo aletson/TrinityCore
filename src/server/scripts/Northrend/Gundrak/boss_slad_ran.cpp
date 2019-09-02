@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -170,8 +170,8 @@ public:
         void JustDied(Unit* /*killer*/) override
         {
             _JustDied();
-            Talk(SAY_DEATH);
             Talk(EMOTE_ACTIVATE_ALTAR);
+            Talk(SAY_DEATH);
         }
 
         void KilledUnit(Unit* who) override
@@ -247,7 +247,7 @@ public:
                     target->CastSpell(target, SPELL_SNAKE_WRAP, true);
 
                     if (TempSummon* _me = me->ToTempSummon())
-                        if (Unit* summoner = _me->GetSummoner())
+                        if (Unit* summoner = _me->GetSummonerUnit())
                             if (Creature* sladran = summoner->ToCreature())
                                 sladran->AI()->SetGUID(target->GetGUID(), DATA_SNAKES_WHYD_IT_HAVE_TO_BE_SNAKES);
 

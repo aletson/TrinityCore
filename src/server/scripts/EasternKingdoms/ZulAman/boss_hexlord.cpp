@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2006-2007 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -443,7 +443,7 @@ class boss_hexlord_malacrass : public CreatureScript
 
                         PlayerGUID = target->GetGUID();
                         PlayerAbility_Timer = urand(8000, 10000);
-                        PlayerClass = target->getClass() - 1;
+                        PlayerClass = target->GetClass() - 1;
 
                         if (PlayerClass == CLASS_DRUID - 1)
                             PlayerClass = CLASS_DRUID;

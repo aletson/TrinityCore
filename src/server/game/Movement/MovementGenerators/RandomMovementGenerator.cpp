@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -42,6 +42,31 @@ MovementGeneratorType RandomMovementGenerator<T>::GetMovementGeneratorType() con
     return RANDOM_MOTION_TYPE;
 }
 
+template<class T>
+void RandomMovementGenerator<T>::Pause(uint32 timer /*= 0*/)
+{
+    if (timer)
+    {
+        this->AddFlag(MOVEMENTGENERATOR_FLAG_TIMED_PAUSED);
+        _timer.Reset(timer);
+        this->RemoveFlag(MOVEMENTGENERATOR_FLAG_PAUSED);
+    }
+    else
+    {
+        this->AddFlag(MOVEMENTGENERATOR_FLAG_PAUSED);
+        this->RemoveFlag(MOVEMENTGENERATOR_FLAG_TIMED_PAUSED);
+    }
+}
+
+template<class T>
+void RandomMovementGenerator<T>::Resume(uint32 overrideTimer /*= 0*/)
+{
+    if (overrideTimer)
+        _timer.Reset(overrideTimer);
+
+    this->RemoveFlag(MOVEMENTGENERATOR_FLAG_PAUSED);
+}
+
 template MovementGeneratorType RandomMovementGenerator<Creature>::GetMovementGeneratorType() const;
 
 template<class T>
@@ -50,7 +75,7 @@ void RandomMovementGenerator<T>::DoInitialize(T*) { }
 template<>
 void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
 {
-    RemoveFlag(MOVEMENTGENERATOR_FLAG_INITIALIZATION_PENDING | MOVEMENTGENERATOR_FLAG_TRANSITORY | MOVEMENTGENERATOR_FLAG_DEACTIVATED);
+    RemoveFlag(MOVEMENTGENERATOR_FLAG_INITIALIZATION_PENDING | MOVEMENTGENERATOR_FLAG_TRANSITORY | MOVEMENTGENERATOR_FLAG_DEACTIVATED | MOVEMENTGENERATOR_FLAG_TIMED_PAUSED);
     AddFlag(MOVEMENTGENERATOR_FLAG_INITIALIZED);
 
     if (!owner || !owner->IsAlive())
@@ -86,7 +111,7 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
     if (!owner)
         return;
 
-    if (owner->HasUnitState(UNIT_STATE_NOT_MOVE) || owner->IsMovementPreventedByCasting())
+    if (owner->HasUnitState(UNIT_STATE_NOT_MOVE | UNIT_STATE_LOST_CONTROL) || owner->IsMovementPreventedByCasting())
     {
         AddFlag(MOVEMENTGENERATOR_FLAG_INTERRUPTED);
         owner->StopMoving();
@@ -108,18 +133,33 @@ void RandomMovementGenerator<Creature>::SetRandomLocation(Creature* owner)
     }
 
     bool result = _path->CalculatePath(position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
-    if (!result || (_path->GetPathType() & PATHFIND_NOPATH))
+    if (!result || (_path->GetPathType() & PATHFIND_NOPATH) || (_path->GetPathType() & PATHFIND_SHORTCUT))
     {
         _timer.Reset(100);
         return;
     }
 
+    RemoveFlag(MOVEMENTGENERATOR_FLAG_TRANSITORY | MOVEMENTGENERATOR_FLAG_TIMED_PAUSED);
+
     owner->AddUnitState(UNIT_STATE_ROAMING_MOVE);
+
+    bool walk = true;
+    switch (owner->GetMovementTemplate().GetRandom())
+    {
+        case CreatureRandomMovementType::CanRun:
+            walk = owner->IsWalking();
+            break;
+        case CreatureRandomMovementType::AlwaysRun:
+            walk = false;
+            break;
+        default:
+            break;
+    }
 
     Movement::MoveSplineInit init(owner);
     init.MovebyPath(_path->GetPath());
-    init.SetWalk(true);
-    int32 traveltime = init.Launch();
+    init.SetWalk(walk);
+    time_t traveltime = init.Launch();
     _timer.Reset(traveltime + resetTimer);
 
     // Call for creature group update
@@ -138,6 +178,9 @@ bool RandomMovementGenerator<Creature>::DoUpdate(Creature* owner, uint32 diff)
     if (!owner || !owner->IsAlive())
         return true;
 
+    if (HasFlag(MOVEMENTGENERATOR_FLAG_FINALIZED | MOVEMENTGENERATOR_FLAG_PAUSED))
+        return true;
+
     if (owner->HasUnitState(UNIT_STATE_NOT_MOVE) || owner->IsMovementPreventedByCasting())
     {
         AddFlag(MOVEMENTGENERATOR_FLAG_INTERRUPTED);
@@ -150,10 +193,7 @@ bool RandomMovementGenerator<Creature>::DoUpdate(Creature* owner, uint32 diff)
 
     _timer.Update(diff);
     if ((HasFlag(MOVEMENTGENERATOR_FLAG_SPEED_UPDATE_PENDING) && !owner->movespline->Finalized()) || (_timer.Passed() && owner->movespline->Finalized()))
-    {
-        RemoveFlag(MOVEMENTGENERATOR_FLAG_TRANSITORY);
         SetRandomLocation(owner);
-    }
 
     return true;
 }

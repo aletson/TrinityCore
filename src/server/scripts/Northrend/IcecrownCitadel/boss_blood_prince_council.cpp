@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -107,6 +107,7 @@ enum Spells
     SPELL_KINETIC_BOMB                  = 72080,
     SPELL_SHOCK_VORTEX                  = 72037,
     SPELL_EMPOWERED_SHOCK_VORTEX        = 72039,
+    SPELL_REMOVE_EMPOWERED_BLOOD        = 72131,
 
     // Kinetic Bomb
     SPELL_UNSTABLE                      = 72059,
@@ -247,7 +248,10 @@ class boss_blood_council_controller : public CreatureScript
                             prince->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                             prince->SetImmuneToPC(false);
                             if (bossData == DATA_PRINCE_VALANAR)
+                            {
                                 prince->SetHealth(prince->GetMaxHealth());
+                                prince->CastSpell(prince, SPELL_REMOVE_EMPOWERED_BLOOD, true);
+                            }
                         }
             }
 
@@ -631,9 +635,9 @@ class boss_prince_keleseth_icc : public CreatureScript
 
             void ScheduleEvents() override
             {
-                events.ScheduleEvent(EVENT_BERSERK, Minutes(10));
-                events.ScheduleEvent(EVENT_SHADOW_RESONANCE, Seconds(10), Seconds(15));
-                events.ScheduleEvent(EVENT_SHADOW_LANCE, Seconds(2));
+                events.ScheduleEvent(EVENT_BERSERK, 10min);
+                events.ScheduleEvent(EVENT_SHADOW_RESONANCE, 10s, 15s);
+                events.ScheduleEvent(EVENT_SHADOW_LANCE, 2s);
 
                 if (IsHeroic())
                 {
@@ -709,9 +713,9 @@ class boss_prince_taldaram_icc : public CreatureScript
 
             void ScheduleEvents() override
             {
-                events.ScheduleEvent(EVENT_BERSERK, Minutes(10));
-                events.ScheduleEvent(EVENT_GLITTERING_SPARKS, Seconds(12), Seconds(15));
-                events.ScheduleEvent(EVENT_CONJURE_FLAME, Seconds(20));
+                events.ScheduleEvent(EVENT_BERSERK, 10min);
+                events.ScheduleEvent(EVENT_GLITTERING_SPARKS, 12s, 15s);
+                events.ScheduleEvent(EVENT_CONJURE_FLAME, 20s);
                 if (IsHeroic())
                     DoCastSelf(SPELL_SHADOW_PRISON, true);
             }
@@ -794,9 +798,9 @@ class boss_prince_valanar_icc : public CreatureScript
 
             void ScheduleEvents() override
             {
-                events.ScheduleEvent(EVENT_BERSERK, Minutes(10));
-                events.ScheduleEvent(EVENT_KINETIC_BOMB, Seconds(18), Seconds(24));
-                events.ScheduleEvent(EVENT_SHOCK_VORTEX, Seconds(15), Seconds(20));
+                events.ScheduleEvent(EVENT_BERSERK, 10min);
+                events.ScheduleEvent(EVENT_KINETIC_BOMB, 18s, 24s);
+                events.ScheduleEvent(EVENT_SHOCK_VORTEX, 15s, 20s);
                 if (IsHeroic())
                     DoCastSelf(SPELL_SHADOW_PRISON, true);
             }
@@ -1061,7 +1065,7 @@ class npc_kinetic_bomb : public CreatureScript
             void DoAction(int32 action) override
             {
                 if (action == SPELL_KINETIC_BOMB_EXPLOSION)
-                    _events.ScheduleEvent(EVENT_BOMB_DESPAWN, Seconds(1));
+                    _events.ScheduleEvent(EVENT_BOMB_DESPAWN, 1s);
 
                 else if (action == ACTION_KINETIC_BOMB_JUMP)
                 {
@@ -1152,7 +1156,7 @@ class npc_dark_nucleus : public CreatureScript
                 if (attacker == me)
                     return;
 
-                me->GetThreatManager().ClearAllThreat();
+                me->GetThreatManager().ResetAllThreat();
                 AddThreat(attacker, 500000000.0f);
             }
 
@@ -1406,15 +1410,18 @@ class spell_valanar_kinetic_bomb_knockback : public SpellScriptLoader
         {
             PrepareSpellScript(spell_valanar_kinetic_bomb_knockback_SpellScript);
 
-            void KnockIntoAir()
+            void KnockIntoAir(SpellMissInfo missInfo)
             {
+                if (missInfo != SPELL_MISS_NONE)
+                    return;
+
                 if (Creature* target = GetHitCreature())
                     target->AI()->DoAction(ACTION_KINETIC_BOMB_JUMP);
             }
 
             void Register() override
             {
-                BeforeHit += SpellHitFn(spell_valanar_kinetic_bomb_knockback_SpellScript::KnockIntoAir);
+                BeforeHit += BeforeSpellHitFn(spell_valanar_kinetic_bomb_knockback_SpellScript::KnockIntoAir);
             }
         };
 

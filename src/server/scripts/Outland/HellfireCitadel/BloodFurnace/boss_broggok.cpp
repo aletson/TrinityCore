@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -58,6 +58,13 @@ class boss_broggok : public CreatureScript
             void Reset() override
             {
                 _Reset();
+
+                if (GameObject * lever = instance->GetGameObject(DATA_BROGGOK_LEVER))
+                {
+                    lever->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE | GO_FLAG_IN_USE);
+                    lever->SetGoState(GO_STATE_READY);
+                }
+
                 DoAction(ACTION_RESET_BROGGOK);
             }
 
@@ -83,15 +90,15 @@ class boss_broggok : public CreatureScript
                 {
                     case EVENT_SLIME_SPRAY:
                         DoCastVictim(SPELL_SLIME_SPRAY);
-                        events.ScheduleEvent(EVENT_SLIME_SPRAY, urand(4000, 12000));
+                        events.ScheduleEvent(EVENT_SLIME_SPRAY, 4s, 12s);
                         break;
                     case EVENT_POISON_BOLT:
                         DoCastVictim(SPELL_POISON_BOLT);
-                        events.ScheduleEvent(EVENT_POISON_BOLT, urand(4000, 12000));
+                        events.ScheduleEvent(EVENT_POISON_BOLT, 4s, 12s);
                         break;
                     case EVENT_POISON_CLOUD:
                         DoCast(me, SPELL_POISON_CLOUD);
-                        events.ScheduleEvent(EVENT_POISON_CLOUD, 20000);
+                        events.ScheduleEvent(EVENT_POISON_CLOUD, 20s);
                         break;
                     default:
                         break;
@@ -109,9 +116,9 @@ class boss_broggok : public CreatureScript
                         me->SetReactState(REACT_AGGRESSIVE);
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                         me->SetImmuneToAll(false);
-                        events.ScheduleEvent(EVENT_SLIME_SPRAY, 10000);
-                        events.ScheduleEvent(EVENT_POISON_BOLT, 7000);
-                        events.ScheduleEvent(EVENT_POISON_CLOUD, 5000);
+                        events.ScheduleEvent(EVENT_SLIME_SPRAY, 10s);
+                        events.ScheduleEvent(EVENT_POISON_BOLT, 7s);
+                        events.ScheduleEvent(EVENT_POISON_CLOUD, 5s);
                         break;
                     case ACTION_RESET_BROGGOK:
                         me->SetReactState(REACT_PASSIVE);
@@ -144,12 +151,14 @@ class go_broggok_lever : public GameObjectScript
                 if (instance->GetBossState(DATA_BROGGOK) != DONE && instance->GetBossState(DATA_BROGGOK) != IN_PROGRESS)
                 {
                     instance->SetBossState(DATA_BROGGOK, IN_PROGRESS);
-                    if (Creature* broggok = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_BROGGOK)))
+                    if (Creature* broggok = instance->GetCreature(DATA_BROGGOK))
                         broggok->AI()->DoAction(ACTION_PREPARE_BROGGOK);
                 }
 
-                me->UseDoorOrButton();
-                return false;
+                me->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE | GO_FLAG_IN_USE);
+                me->SetGoState(GO_STATE_ACTIVE);
+
+                return true;
             }
         };
 

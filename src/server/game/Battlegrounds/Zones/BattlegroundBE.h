@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
 #define __BATTLEGROUNDBE_H
 
 #include "Arena.h"
+#include "EventMap.h"
 
 enum BattlegroundBEObjectTypes
 {
@@ -42,6 +43,16 @@ enum BattlegroundBEGameObjects
     BG_BE_OBJECT_TYPE_BUFF_2    = 184664
 };
 
+enum BattlegroundBEData
+{
+    BG_BE_REMOVE_DOORS_TIMER    = 5000
+};
+
+enum BattlegroundBEEvents
+{
+    BG_BE_EVENT_REMOVE_DOORS    = 1
+};
+
 class BattlegroundBE : public Arena
 {
     public:
@@ -53,6 +64,11 @@ class BattlegroundBE : public Arena
 
         void HandleAreaTrigger(Player* Source, uint32 Trigger) override;
         bool SetupBattleground() override;
-        void FillInitialWorldStates(WorldPacket &d) override;
+        void FillInitialWorldStates(WorldPackets::WorldState::InitWorldStates& packet) override;
+
+    private:
+        void PostUpdateImpl(uint32 diff) override;
+
+        EventMap _events;
 };
 #endif

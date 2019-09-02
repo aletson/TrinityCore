@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -123,10 +123,10 @@ public:
             me->StopMoving();
             summons.DoZoneInCombat();
             Talk(SAY_AGGRO);
-            events.ScheduleEvent(EVENT_ATTACK, Seconds(7));
-            events.ScheduleEvent(EVENT_STRIKE, Seconds(21));
-            events.ScheduleEvent(EVENT_SHOUT, Seconds(16));
-            events.ScheduleEvent(EVENT_KNIFE, Seconds(10));
+            events.ScheduleEvent(EVENT_ATTACK, 7s);
+            events.ScheduleEvent(EVENT_STRIKE, 21s);
+            events.ScheduleEvent(EVENT_SHOUT, 16s);
+            events.ScheduleEvent(EVENT_KNIFE, 10s);
         }
 
         void UpdateAI(uint32 diff) override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -85,10 +85,6 @@ WaypointMgr* WaypointMgr::instance()
 
 void WaypointMgr::ReloadPath(uint32 id)
 {
-    auto itr = _waypointStore.find(id);
-    if (itr != _waypointStore.end())
-        _waypointStore.erase(itr);
-
     PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_WAYPOINT_DATA_BY_ID);
 
     stmt->setUInt32(0, id);
@@ -132,7 +128,9 @@ void WaypointMgr::ReloadPath(uint32 id)
     }
     while (result->NextRow());
 
-    _waypointStore[id] = WaypointPath(id, std::move(values));
+    WaypointPath& path = _waypointStore[id];
+    path.id = id;
+    path.nodes = std::move(values);
 }
 
 WaypointPath const* WaypointMgr::GetPath(uint32 id) const

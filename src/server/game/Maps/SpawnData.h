@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,12 +20,13 @@
 
 #include "Position.h"
 
+// EnumUtils: DESCRIBE THIS
 enum SpawnObjectType
 {
-    SPAWN_TYPE_CREATURE = 0,
-    SPAWN_TYPE_GAMEOBJECT = 1,
+    SPAWN_TYPE_CREATURE = 0,   // TITLE Creature
+    SPAWN_TYPE_GAMEOBJECT = 1, // TITLE Gameobject
 
-    SPAWN_TYPE_MAX
+    SPAWN_TYPE_MAX             // SKIP
 };
 
 enum SpawnObjectTypeMask

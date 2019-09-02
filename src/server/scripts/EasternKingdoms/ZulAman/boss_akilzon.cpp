@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "CellImpl.h"
 #include "GridNotifiersImpl.h"
+#include "MiscPackets.h"
 #include "MotionMaster.h"
 #include "ObjectAccessor.h"
 #include "ScriptedCreature.h"
@@ -117,11 +118,11 @@ class boss_akilzon : public CreatureScript
             {
                 _JustEngagedWith();
 
-                events.ScheduleEvent(EVENT_STATIC_DISRUPTION, urand(10000, 20000)); // 10 to 20 seconds (bosskillers)
-                events.ScheduleEvent(EVENT_GUST_OF_WIND, urand(20000, 30000));      // 20 to 30 seconds(bosskillers)
-                events.ScheduleEvent(EVENT_CALL_LIGHTNING, urand(10000, 20000));    // totaly random timer. can't find any info on this
-                events.ScheduleEvent(EVENT_ELECTRICAL_STORM, 60000);                // 60 seconds(bosskillers)
-                events.ScheduleEvent(EVENT_RAIN, urand(47000, 52000));
+                events.ScheduleEvent(EVENT_STATIC_DISRUPTION, 10s, 20s); // 10 to 20 seconds (bosskillers)
+                events.ScheduleEvent(EVENT_GUST_OF_WIND, 20s, 30s);      // 20 to 30 seconds(bosskillers)
+                events.ScheduleEvent(EVENT_CALL_LIGHTNING, 10s, 20s);    // totaly random timer. can't find any info on this
+                events.ScheduleEvent(EVENT_ELECTRICAL_STORM, 1min);                // 60 seconds(bosskillers)
+                events.ScheduleEvent(EVENT_RAIN, 47s, 52s);
                 events.ScheduleEvent(EVENT_ENRAGE, 10*MINUTE*IN_MILLISECONDS);      // 10 minutes till enrage(bosskillers)
 
                 Talk(SAY_AGGRO);
@@ -139,16 +140,13 @@ class boss_akilzon : public CreatureScript
                     Talk(SAY_KILL);
             }
 
-            void SetWeather(uint32 weather, float grade)
+            void SetWeather(WeatherState weather, float grade)
             {
                 Map* map = me->GetMap();
                 if (!map->IsDungeon())
                     return;
 
-                WorldPacket data(SMSG_WEATHER, (4+4+4));
-                data << uint32(weather) << float(grade) << uint8(0);
-
-                map->SendToPlayers(&data);
+                map->SendToPlayers(WorldPackets::Misc::Weather(weather, grade).Write());
             }
 
             void HandleStormSequence(Unit* Cloud) // 1: begin, 2-9: tick, 10: end
@@ -212,7 +210,7 @@ class boss_akilzon : public CreatureScript
                 if (StormCount > 10)
                 {
                     StormCount = 0; // finish
-                    events.ScheduleEvent(EVENT_SUMMON_EAGLES, 5000);
+                    events.ScheduleEvent(EVENT_SUMMON_EAGLES, 5s);
                     me->InterruptNonMeleeSpells(false);
                     CloudGUID.Clear();
                     if (Cloud)
@@ -220,7 +218,7 @@ class boss_akilzon : public CreatureScript
                     SetWeather(WEATHER_STATE_FINE, 0.0f);
                     isRaining = false;
                 }
-                events.ScheduleEvent(EVENT_STORM_SEQUENCE, 1000);
+                events.ScheduleEvent(EVENT_STORM_SEQUENCE, 1s);
             }
 
             void UpdateAI(uint32 diff) override
@@ -246,7 +244,7 @@ class boss_akilzon : public CreatureScript
                             }
                             /*if (float dist = me->IsWithinDist3d(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 5.0f) dist = 5.0f;
                             SDisruptAOEVisual_Timer = 1000 + floor(dist / 30 * 1000.0f);*/
-                            events.ScheduleEvent(EVENT_STATIC_DISRUPTION, urand(10000, 18000));
+                            events.ScheduleEvent(EVENT_STATIC_DISRUPTION, 10s, 18s);
                             break;
                             }
                         case EVENT_GUST_OF_WIND:
@@ -256,12 +254,12 @@ class boss_akilzon : public CreatureScript
                                     target = me->GetVictim();
                                 if (target)
                                     DoCast(target, SPELL_GUST_OF_WIND);
-                                events.ScheduleEvent(EVENT_GUST_OF_WIND, urand(20000, 30000));
+                                events.ScheduleEvent(EVENT_GUST_OF_WIND, 20s, 30s);
                                 break;
                             }
                         case EVENT_CALL_LIGHTNING:
                             DoCastVictim(SPELL_CALL_LIGHTNING);
-                            events.ScheduleEvent(EVENT_CALL_LIGHTNING, urand(12000, 17000)); // totaly random timer. can't find any info on this
+                            events.ScheduleEvent(EVENT_CALL_LIGHTNING, 12s, 17s); // totaly random timer. can't find any info on this
                             break;
                         case EVENT_ELECTRICAL_STORM:
                             {
@@ -297,8 +295,8 @@ class boss_akilzon : public CreatureScript
                                         Cloud->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                                     }
                                 StormCount = 1;
-                                events.ScheduleEvent(EVENT_ELECTRICAL_STORM, 60000); // 60 seconds(bosskillers)
-                                events.ScheduleEvent(EVENT_RAIN, urand(47000, 52000));
+                                events.ScheduleEvent(EVENT_ELECTRICAL_STORM, 1min); // 60 seconds(bosskillers)
+                                events.ScheduleEvent(EVENT_RAIN, 47s, 52s);
                                 break;
                             }
                         case EVENT_RAIN:
@@ -308,7 +306,7 @@ class boss_akilzon : public CreatureScript
                                 isRaining = true;
                             }
                             else
-                                events.ScheduleEvent(EVENT_RAIN, 1000);
+                                events.ScheduleEvent(EVENT_RAIN, 1s);
                             break;
                         case EVENT_STORM_SEQUENCE:
                             {
@@ -355,7 +353,7 @@ class boss_akilzon : public CreatureScript
                         case EVENT_ENRAGE:
                              Talk(SAY_ENRAGE);
                              DoCast(me, SPELL_BERSERK, true);
-                            events.ScheduleEvent(EVENT_ENRAGE, 600000);
+                            events.ScheduleEvent(EVENT_ENRAGE, 10min);
                             break;
                         default:
                             break;

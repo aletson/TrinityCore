@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -57,10 +57,10 @@ class boss_grobbulus : public CreatureScript
             void JustEngagedWith(Unit* /*who*/) override
             {
                 _JustEngagedWith();
-                events.ScheduleEvent(EVENT_CLOUD, Seconds(15));
-                events.ScheduleEvent(EVENT_INJECT, Seconds(20));
+                events.ScheduleEvent(EVENT_CLOUD, 15s);
+                events.ScheduleEvent(EVENT_INJECT, 20s);
                 events.ScheduleEvent(EVENT_SPRAY, randtime(Seconds(15), Seconds(30))); // not sure
-                events.ScheduleEvent(EVENT_BERSERK, Minutes(12));
+                events.ScheduleEvent(EVENT_BERSERK, 12min);
             }
 
             void SpellHitTarget(Unit* target, SpellInfo const* spell) override
@@ -124,7 +124,7 @@ class npc_grobbulus_poison_cloud : public CreatureScript
                 creature->SetReactState(REACT_PASSIVE);
             }
 
-            void IsSummonedBy(Unit* /*summoner*/) override
+            void IsSummonedBy(WorldObject* /*summoner*/) override
             {
                 // no visual when casting in ctor or Reset()
                 DoCast(me, SPELL_POISON_CLOUD_PASSIVE, true);

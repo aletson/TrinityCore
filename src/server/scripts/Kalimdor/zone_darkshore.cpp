@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -53,8 +53,7 @@ enum Kerlonian
     SPELL_SLEEP_VISUAL          = 25148,
     SPELL_AWAKEN                = 17536,
     QUEST_SLEEPER_AWAKENED      = 5321,
-    NPC_LILADRIS                = 11219,                    //attackers entries unknown
-    FACTION_KER_ESCORTEE        = 113
+    NPC_LILADRIS                = 11219                    //attackers entries unknown
 };
 
 /// @todo make concept similar as "ringo" -escort. Find a way to run the scripted attacks, _if_ player are choosing road.
@@ -162,7 +161,7 @@ public:
             {
                 me->SetStandState(UNIT_STAND_STATE_STAND);
                 Talk(SAY_KER_START, player);
-                StartFollow(player, FACTION_KER_ESCORTEE, quest);
+                StartFollow(player, FACTION_ESCORTEE_N_NEUTRAL_PASSIVE, QUEST_SLEEPER_AWAKENED);
             }
         }
     };
@@ -290,6 +289,12 @@ public:
                 Start(false, false, player->GetGUID());
                 me->SetFaction(FACTION_ESCORTEE_A_NEUTRAL_PASSIVE);
             }
+        }
+
+        void JustDied(Unit* /*killer*/) override
+        {
+            if (Player* player = GetPlayerForEscort())
+                player->FailQuest(QUEST_ABSENT_MINDED_PT2);
         }
     };
 

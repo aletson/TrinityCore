@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 TrinityCore <https://www.trinitycore.org/>
+ * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -99,6 +99,10 @@ void MailDraft::prepareItems(Player* receiver, SQLTransaction& trans)
         return;
 
     m_mailTemplateItemsNeed = false;
+
+    // The mail sent after turning in the quest The Good News and The Bad News contains 100g
+    if (m_mailTemplateId == 123)
+        m_money = 1000000;
 
     Loot mailLoot;
 
